@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+set -o pipefail
+cd "$(dirname "$0")" || exit 1
+
+# Check for arguments and print usage if none are given
+if [ $# -eq 0 ]; then
+    echo "Usage: COMMAND"
+    exit 1
+fi
+
+echo "$@"
+# Check for the command and execute it
+if [ "$1" = "build" ]; then
+    echo "Compiling charts"
+    for file in charts/*.d2; do
+        filename=$(basename -- "$file")
+        echo "Compiling $filename to dist/${filename%.d2}.png"
+        d2 --theme 1 --pad 0 "$file" dist/"${filename%.d2}".png
+    done
+    echo "Compiling documents"
+    echo "Compiling main.typ to dist/document.pdf"
+    typst document/main.typ dist/document.pdf
+    cd ..
+elif [ "$1" = "clean" ]; then
+    find dist -mindepth 1 -not -name ".gitkeep" -delete
+elif [ "$1" = "watch" ]; then
+    echo "Watching for changes"
+    find . -type f -name "*.d2" -o -name "*.typ" | entr -d ./project build
+else
+    echo "Unknown command"
+    exit 1
+fi
