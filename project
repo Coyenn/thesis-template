@@ -3,6 +3,16 @@
 set -o pipefail
 cd "$(dirname "$0")" || exit 1
 
+# Function for compiling d2 files
+function compile_d2() {
+    echo "Compiling charts"
+    for file in charts/*.d2; do
+        filename=$(basename -- "$file")
+        echo "Compiling $filename to dist/${filename%.d2}.svg"
+        d2 --theme 1 --pad 0 -l elk "$file" dist/"${filename%.d2}".svg
+    done
+}
+
 # Check for arguments and print usage if none are given
 if [ $# -eq 0 ]; then
     echo "Usage: COMMAND"
@@ -12,21 +22,18 @@ fi
 echo "$@"
 # Check for the command and execute it
 if [ "$1" = "build" ]; then
-    echo "Compiling charts"
-    for file in charts/*.d2; do
-        filename=$(basename -- "$file")
-        echo "Compiling $filename to dist/${filename%.d2}.png"
-        d2 --theme 1 --pad 0 "$file" dist/"${filename%.d2}".png
-    done
+    compile_d2
     echo "Compiling documents"
     echo "Compiling main.typ to dist/document.pdf"
-    typst document/main.typ dist/document.pdf
+    typst compile document/main.typ dist/document.pdf
     cd ..
 elif [ "$1" = "clean" ]; then
     find dist -mindepth 1 -not -name ".gitkeep" -delete
 elif [ "$1" = "watch" ]; then
     echo "Watching for changes"
     find . -type f -name "*.d2" -o -name "*.typ" | entr -d ./project build
+elif [ "$1" = "d2" ]; then
+    compile_d2
 else
     echo "Unknown command"
     exit 1
